@@ -1,4 +1,122 @@
-<!DOCTYPE html>
-<!-- full template omitted for brevity; use the same template string you already have
-     with [{"name": "Type 2 diabetes", "value": 80, "group": "endo", "links": [{"text": "ADA Standards of Care", "url": "https://diabetesjournals.org/care/article/47/Supplement_1/S1/154174/Standards-of-Care-in-Diabetes-2024-Abridged-for"}, {"text": "CGM coverage resources", "url": "https://www.mct2d.org/resources"}]}, {"name": "HTN", "value": 70, "group": "cardio", "links": [{"text": "ACC/AHA Guideline", "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"}]}, {"name": "CHF", "value": 45, "group": "cardio", "links": [{"text": "HF Pathways", "url": "https://www.heart.org/en/health-topics/heart-failure"}]}, {"name": "PCOS", "value": 38, "group": "obgyn", "links": [{"text": "PCOS overview (NIH)", "url": "https://www.nichd.nih.gov/health/topics/pcos"}]}, {"name": "OSA", "value": 36, "group": "other", "links": [{"text": "OSA patient education (ATS)", "url": "https://www.thoracic.org/patients/patient-resources/resources/obstructive-sleep-apnea.pdf"}]}, {"name": "NAFLD/MASLD", "value": 50, "group": "endo", "links": [{"text": "AASLD Guidance", "url": "https://www.aasld.org/publications/practice-guidelines"}, {"text": "Lifestyle counseling tips", "url": "https://www.cdc.gov/healthyweight/healthy_eating/"}]}, {"name": "Stroke", "value": 30, "group": "cardio", "links": [{"text": "Stroke risk reduction", "url": "https://www.stroke.org/en/about-stroke/stroke-risk-factors"}]}, {"name": "GERD", "value": 24, "group": "other", "links": [{"text": "GERD patient info", "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/acid-reflux-ger-gerd-adults"}]}, {"name": "Depression", "value": 28, "group": "other", "links": [{"text": "PHQ-9 (APA)", "url": "https://www.apa.org/depression-guideline/phq-9.pdf"}]}, {"name": "Preeclampsia", "value": 20, "group": "obgyn", "links": [{"text": "ACOG Practice Bulletin", "url": "https://www.acog.org/clinical"}]}] and {"cardio": "#4f46e5", "endo": "#06b6d4", "obgyn": "#f97316", "other": "#10b981"} placeholders -->
-</html>
+<!doctype html>
+<meta charset="utf-8">
+<title>Interactive Bubbles — Robust with D3 Fallback</title>
+<style>
+  :root { --bg:#0b1020; --fg:#fff; --muted:#9aa4b2; --panel:#0f1730; --border:#1f2a44; }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  #wrap{position:relative;margin:12px}
+  #status{position:absolute;left:12px;top:8px;font-size:12px;color:#9aa4b2;background:rgba(255,255,255,0.08);padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);z-index:99}
+  #chart-wrap{position:relative;height:640px;min-height:560px;padding:8px 12px 20px;border-top:1px solid var(--border);background:var(--panel);border-radius:12px}
+  svg{width:100%;height:100%;display:block}
+  .label{pointer-events:none;fill:#fff;font-weight:700;text-anchor:middle;alignment-baseline:middle;paint-order:stroke;stroke:rgba(0,0,0,.55);stroke-width:2px}
+  .tooltip{position:absolute;pointer-events:auto;background:#101a37;color:#fff;border:1px solid #2d3a69;border-radius:10px;padding:10px 12px;font-size:13px;box-shadow:0 10px 20px rgba(0,0,0,0.35);max-width:340px;display:none;z-index:10}
+  .legend{position:absolute;right:12px;bottom:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px 10px;font-size:12px}
+  .legend .dot{width:10px;height:10px;border-radius:9999px;display:inline-block;margin-right:6px}
+</style>
+
+<div id="wrap">
+  <div id="status">Loading…</div>
+  <h3 style="margin:8px 0 8px 4px">Interactive Bubbles</h3>
+  <div id="chart-wrap">
+    <div id="tooltip" class="tooltip"></div>
+    <div class="legend" id="legend"></div>
+    <svg id="chart" role="img" aria-label="Interactive bubble chart"></svg>
+  </div>
+</div>
+
+<script>
+  // Injected from Python:
+  window.BUBBLE_DATA = [{"name": "Type 2 diabetes", "value": 80, "group": "endo", "links": [{"text": "ADA Standards of Care", "url": "https://diabetesjournals.org/care/article/47/Supplement_1/S1/154174/Standards-of-Care-in-Diabetes-2024-Abridged-for"}, {"text": "CGM coverage resources", "url": "https://www.mct2d.org/resources"}]}, {"name": "HTN", "value": 70, "group": "cardio", "links": [{"text": "ACC/AHA Guideline", "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"}]}, {"name": "Uninary Incontinence", "value": 90, "group": "other", "links": [{"text": "Osborn et al 2013 - Urology Journal", "url": "https://pubmed.ncbi.nlm.nih.gov/23972338/"}]}, {"name": "Gestational hypertension", "value": 70, "group": "obgyn", "links": [{"text": "Mechanisms & risk in obese pregnancies", "url": "https://pubmed.ncbi.nlm.nih.gov/26447211/"}]}, {"name": "CHF", "value": 45, "group": "cardio", "links": [{"text": "HF Pathways", "url": "https://www.heart.org/en/health-topics/heart-failure"}]}, {"name": "PCOS", "value": 38, "group": "obgyn", "links": [{"text": "PCOS overview (NIH)", "url": "https://www.nichd.nih.gov/health/topics/pcos"}]}, {"name": "OSA", "value": 36, "group": "other", "links": [{"text": "OSA patient education (ATS)", "url": "https://www.thoracic.org/patients/patient-resources/resources/obstructive-sleep-apnea.pdf"}]}, {"name": "NAFLD/MASLD", "value": 50, "group": "endo", "links": [{"text": "AASLD Guidance", "url": "https://www.aasld.org/publications/practice-guidelines"}, {"text": "Lifestyle counseling tips", "url": "https://www.cdc.gov/healthyweight/healthy_eating/"}]}, {"name": "Stroke", "value": 30, "group": "cardio", "links": [{"text": "Stroke risk reduction", "url": "https://www.stroke.org/en/about-stroke/stroke-risk-factors"}]}, {"name": "GERD", "value": 24, "group": "other", "links": [{"text": "GERD patient info", "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/acid-reflux-ger-gerd-adults"}]}, {"name": "Depression", "value": 28, "group": "other", "links": [{"text": "Milaneschi et al 2019", "url": "https://pubmed.ncbi.nlm.nih.gov/29453413/"}]}, {"name": "Preeclampsia", "value": 20, "group": "obgyn", "links": [{"text": "ACOG Practice Bulletin", "url": "https://www.acog.org/clinical"}]}];
+  window.GROUP_COLORS = {"cardio": "#4f46e5", "endo": "#06b6d4", "obgyn": "#f97316", "other": "#10b981"};
+
+  // Normalize group keys to align with GROUP_COLORS (handles "OB/GYN" vs "obgyn")
+  window.BUBBLE_DATA = window.BUBBLE_DATA.map(d => ({
+    ...d,
+    group: (d.group || "").toLowerCase().replace(/[^a-z]/g, "")
+  }));
+
+  function startChart(){
+    const status = document.getElementById('status');
+    if (!window.d3) { status.innerHTML = "⚠️ D3 not available — chart cannot render."; return; }
+    status.innerHTML = "D3 loaded — rendering…";
+
+    const svg = d3.select("#chart");
+    const wrap = document.getElementById("chart-wrap");
+    const legendDiv = document.getElementById("legend");
+    const tooltip = document.getElementById("tooltip");
+
+    // Legend
+    legendDiv.innerHTML = Object.entries(window.GROUP_COLORS)
+      .map(([k,v]) => `<span class="dot" style="background:${v}"></span> ${k}`)
+      .join("&nbsp;&nbsp;");
+
+    // Sizes
+    const W = wrap.clientWidth || 960, H = wrap.clientHeight || 640;
+    svg.attr("viewBox", [0,0,W,H]).attr("preserveAspectRatio", "xMidYMid meet");
+    svg.selectAll("*").remove();
+
+    const minR = Math.min(W,H)/12, maxR = Math.min(W,H)/5.5;
+    const size = d3.scaleSqrt()
+      .domain([d3.min(window.BUBBLE_DATA,d=>d.value), d3.max(window.BUBBLE_DATA,d=>d.value)])
+      .range([minR, maxR]);
+
+    const nodes = window.BUBBLE_DATA.map(d => ({...d, x:Math.random()*W, y:Math.random()*H, r:size(d.value)}));
+
+    const sim = d3.forceSimulation(nodes)
+      .force("center", d3.forceCenter(W/2, H/2))
+      .force("charge", d3.forceManyBody().strength(2))
+      .force("collision", d3.forceCollide().radius(d => d.r + 4))
+      .stop();
+    for (let i=0;i<250;i++) sim.tick();
+
+    const g = svg.append("g");
+    const bubble = g.selectAll("g.bubble")
+      .data(nodes)
+      .enter().append("g")
+      .attr("class","bubble")
+      .attr("transform", d => `translate(${d.x},${d.y})`);
+
+    bubble.append("circle")
+      .attr("r", d=>d.r)
+      .attr("fill", d=>window.GROUP_COLORS[d.group] || "#64748b")
+      .attr("fill-opacity", 0.95)
+      .attr("stroke", "rgba(0,0,0,0.65)")
+      .attr("stroke-width", 1.5)
+      .on("mousemove", (event,d) => {
+        tooltip.style.display = "block";
+        tooltip.style.left = (event.clientX + 12) + "px";
+        tooltip.style.top  = (event.clientY + 12) + "px";
+        tooltip.innerHTML = `<strong>${d.name}</strong><ul style="margin:6px 0 0 18px">` +
+          (d.links||[]).map(l=>`<li><a target="_blank" rel="noopener" href="${l.url}">${l.text}</a></li>`).join("") +
+          `</ul>`;
+      })
+      .on("mouseleave", () => tooltip.style.display = "none")
+      .on("click", (event,d) => { if (d.links && d.links[0]) window.open(d.links[0].url, "_blank"); });
+
+    bubble.append("text")
+      .attr("class","label")
+      .text(d=>d.name)
+      .attr("font-size", d=>Math.max(10, d.r/3));
+
+    status.innerHTML = "✅ Rendered.";
+  }
+
+  // Multi-CDN D3 loader
+  (function loadD3(urls, i){
+    const status = document.getElementById('status');
+    if(i >= urls.length){
+      status.innerHTML = "❌ Could not load D3 from any CDN (network blocked).";
+      return;
+    }
+    status.innerHTML = "Loading D3… " + urls[i];
+    var s = document.createElement('script');
+    s.src = urls[i];
+    s.onload = function(){ status.innerHTML = "D3 loaded."; startChart(); };
+    s.onerror = function(){ status.innerHTML = "Failed: " + urls[i]; loadD3(urls, i+1); };
+    document.head.appendChild(s);
+  })([
+    "https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js",
+    "https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js",
+    "https://unpkg.com/d3@7/dist/d3.min.js"
+  ], 0);
+</script>
