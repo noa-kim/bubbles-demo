@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Interactive Bubbles — Robust with D3 Fallback</title>
+<title>Interactive Bubbles — Contained & Fit</title>
 <style>
   :root { --bg:#0b1020; --fg:#fff; --muted:#9aa4b2; --panel:#0f1730; --border:#1f2a44; }
   html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
@@ -26,10 +26,10 @@
 
 <script>
   // Injected from Python:
-  window.BUBBLE_DATA = [{"name": "Type 2 diabetes", "value": 80, "group": "endo", "links": [{"text": "ADA Standards of Care", "url": "https://diabetesjournals.org/care/article/47/Supplement_1/S1/154174/Standards-of-Care-in-Diabetes-2024-Abridged-for"}, {"text": "CGM coverage resources", "url": "https://www.mct2d.org/resources"}]}, {"name": "HTN", "value": 70, "group": "cardio", "links": [{"text": "ACC/AHA Guideline", "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"}]}, {"name": "Uninary Incontinence", "value": 90, "group": "other", "links": [{"text": "Osborn et al 2013 - Urology Journal", "url": "https://pubmed.ncbi.nlm.nih.gov/23972338/"}]}, {"name": "Gestational hypertension", "value": 70, "group": "obgyn", "links": [{"text": "Mechanisms & risk in obese pregnancies", "url": "https://pubmed.ncbi.nlm.nih.gov/26447211/"}]}, {"name": "CHF", "value": 45, "group": "cardio", "links": [{"text": "HF Pathways", "url": "https://www.heart.org/en/health-topics/heart-failure"}]}, {"name": "PCOS", "value": 38, "group": "obgyn", "links": [{"text": "PCOS overview (NIH)", "url": "https://www.nichd.nih.gov/health/topics/pcos"}]}, {"name": "OSA", "value": 36, "group": "other", "links": [{"text": "OSA patient education (ATS)", "url": "https://www.thoracic.org/patients/patient-resources/resources/obstructive-sleep-apnea.pdf"}]}, {"name": "NAFLD/MASLD", "value": 50, "group": "endo", "links": [{"text": "AASLD Guidance", "url": "https://www.aasld.org/publications/practice-guidelines"}, {"text": "Lifestyle counseling tips", "url": "https://www.cdc.gov/healthyweight/healthy_eating/"}]}, {"name": "Stroke", "value": 30, "group": "cardio", "links": [{"text": "Stroke risk reduction", "url": "https://www.stroke.org/en/about-stroke/stroke-risk-factors"}]}, {"name": "GERD", "value": 24, "group": "other", "links": [{"text": "GERD patient info", "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/acid-reflux-ger-gerd-adults"}]}, {"name": "Depression", "value": 28, "group": "other", "links": [{"text": "Milaneschi et al 2019", "url": "https://pubmed.ncbi.nlm.nih.gov/29453413/"}]}, {"name": "Preeclampsia", "value": 20, "group": "obgyn", "links": [{"text": "ACOG Practice Bulletin", "url": "https://www.acog.org/clinical"}]}];
+  window.BUBBLE_DATA = [{"name": "Type 2 diabetes", "value": 80, "group": "endo", "links": [{"text": "ADA", "url": "https://diabetesjournals.org/care"}]}, {"name": "HTN", "value": 70, "group": "cardio", "links": [{"text": "ACC/AHA", "url": "https://www.ahajournals.org/doi/10.1161/HYP.0000000000000065"}]}, {"name": "Urinary Incontinence", "value": 90, "group": "other", "links": [{"text": "Osborn 2013", "url": "https://pubmed.ncbi.nlm.nih.gov/23972338/"}]}, {"name": "Gestational hypertension", "value": 70, "group": "OB/GYN", "links": [{"text": "Mechanisms", "url": "https://pubmed.ncbi.nlm.nih.gov/26447211/"}]}, {"name": "CHF", "value": 45, "group": "cardio", "links": [{"text": "AHA HF", "url": "https://www.heart.org"}]}, {"name": "PCOS", "value": 38, "group": "obgyn", "links": [{"text": "NIH PCOS", "url": "https://www.nichd.nih.gov/health/topics/pcos"}]}, {"name": "OSA", "value": 36, "group": "other", "links": [{"text": "ATS", "url": "https://www.thoracic.org/patients/patient-resources/resources/obstructive-sleep-apnea.pdf"}]}, {"name": "NAFLD/MASLD", "value": 50, "group": "endo", "links": [{"text": "AASLD", "url": "https://www.aasld.org/publications/practice-guidelines"}]}, {"name": "Stroke", "value": 30, "group": "cardio", "links": [{"text": "ASA", "url": "https://www.stroke.org"}]}, {"name": "GERD", "value": 24, "group": "other", "links": [{"text": "NIDDK GERD", "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/acid-reflux-ger-gerd-adults"}]}, {"name": "Depression", "value": 28, "group": "other", "links": [{"text": "Milaneschi 2019", "url": "https://pubmed.ncbi.nlm.nih.gov/29453413/"}]}, {"name": "Preeclampsia", "value": 20, "group": "obgyn", "links": [{"text": "ACOG", "url": "https://www.acog.org/clinical"}]}];
   window.GROUP_COLORS = {"cardio": "#4f46e5", "endo": "#06b6d4", "obgyn": "#f97316", "other": "#10b981"};
 
-  // Normalize group keys to align with GROUP_COLORS (handles "OB/GYN" vs "obgyn")
+  // Normalize group keys (e.g., "OB/GYN" -> "obgyn")
   window.BUBBLE_DATA = window.BUBBLE_DATA.map(d => ({
     ...d,
     group: (d.group || "").toLowerCase().replace(/[^a-z]/g, "")
@@ -55,21 +55,47 @@
     svg.attr("viewBox", [0,0,W,H]).attr("preserveAspectRatio", "xMidYMid meet");
     svg.selectAll("*").remove();
 
-    const minR = Math.min(W,H)/12, maxR = Math.min(W,H)/5.5;
+    // Bubble radii
+    const minR = Math.min(W,H)/14, maxR = Math.min(W,H)/5.5; // visible smalls
     const size = d3.scaleSqrt()
       .domain([d3.min(window.BUBBLE_DATA,d=>d.value), d3.max(window.BUBBLE_DATA,d=>d.value)])
       .range([minR, maxR]);
 
+    const PADDING = 8; // keep a small wall gap
     const nodes = window.BUBBLE_DATA.map(d => ({...d, x:Math.random()*W, y:Math.random()*H, r:size(d.value)}));
 
+    // Force simulation
     const sim = d3.forceSimulation(nodes)
       .force("center", d3.forceCenter(W/2, H/2))
       .force("charge", d3.forceManyBody().strength(2))
-      .force("collision", d3.forceCollide().radius(d => d.r + 4))
+      .force("collision", d3.forceCollide().radius(d => d.r + 4)) // extra spacing
       .stop();
-    for (let i=0;i<250;i++) sim.tick();
 
-    const g = svg.append("g");
+    // Tick & hard-boundary clamp so nothing can leave the canvas
+    for (let i=0;i<300;i++){
+      sim.tick();
+      for (const d of nodes){
+        d.x = Math.max(d.r + PADDING, Math.min(W - d.r - PADDING, d.x));
+        d.y = Math.max(d.r + PADDING, Math.min(H - d.r - PADDING, d.y));
+      }
+    }
+
+    // Auto-scale-to-fit: if the layout still needs more room, scale group down to fit
+    let minX = +Infinity, minY = +Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const d of nodes){
+      if (d.x - d.r < minX) minX = d.x - d.r;
+      if (d.y - d.r < minY) minY = d.y - d.r;
+      if (d.x + d.r > maxX) maxX = d.x + d.r;
+      if (d.y + d.r > maxY) maxY = d.y + d.r;
+    }
+    minX -= PADDING; minY -= PADDING; maxX += PADDING; maxY += PADDING;
+    const neededW = maxX - minX, neededH = maxY - minY;
+    const s = Math.min(W / neededW, H / neededH, 1); // only scale down (<=1)
+
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const g = svg.append("g")
+      .attr("transform", `translate(${W/2},${H/2}) scale(${s}) translate(${-cx},${-cy})`);
+
     const bubble = g.selectAll("g.bubble")
       .data(nodes)
       .enter().append("g")
@@ -98,10 +124,10 @@
       .text(d=>d.name)
       .attr("font-size", d=>Math.max(10, d.r/3));
 
-    status.innerHTML = "✅ Rendered.";
+    document.getElementById('status').innerHTML = "✅ Rendered.";
   }
 
-  // Multi-CDN D3 loader
+  // D3 loader with 3-CDN fallback
   (function loadD3(urls, i){
     const status = document.getElementById('status');
     if(i >= urls.length){
